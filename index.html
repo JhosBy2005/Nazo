@@ -208,7 +208,16 @@
   .vol-btn:focus-visible, .vol input:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
   .vol input {
     -webkit-appearance: none; appearance: none;
-    flex: 1; min-width: 0; height: 4px; margin: 0; border-radius: 3px; cursor: pointer;
+    flex: 1; min-width: 0; height: 26px; margin: 0; cursor: pointer;
+    background-color: transparent !important;
+    background-position: center !important;
+    background-size: 100% 4px !important;
+    background-repeat: no-repeat !important;
+  }
+  @media (pointer: coarse) {
+    .vol input::-webkit-slider-thumb { width: 18px; height: 18px; }
+    .vol input::-moz-range-thumb { width: 18px; height: 18px; }
+    .vol-btn { width: 36px; height: 36px; }
   }
   .vol input::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
   .vol input::-moz-range-thumb { width: 13px; height: 13px; border: none; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
@@ -225,14 +234,13 @@
     transition: color .25s ease, background .25s ease;
   }
   .vol-intro:hover, .vol-intro:focus-within { color: #F7E4BE; background: rgba(255,220,160,.08); }
-  .vol-intro input { background: linear-gradient(90deg, rgba(247,228,190,.85) var(--v, 50%), rgba(247,228,190,.18) var(--v, 50%)); }
+  .vol-intro input { background-image: linear-gradient(90deg, rgba(247,228,190,.85) var(--v, 50%), rgba(247,228,190,.18) var(--v, 50%)); }
   .vol-intro input::-webkit-slider-thumb { background: #F7E4BE; }
   .vol-intro input::-moz-range-thumb { background: #F7E4BE; }
   /* en la playlist: una fila fina bajo los controles */
   .vol-player { position: relative; margin: .1rem .35rem .55rem; color: #3B2616; opacity: .82; }
   .vol-player input {
-    background: linear-gradient(90deg, #3B2616 var(--v, 50%), rgba(255,255,255,.38) var(--v, 50%));
-    box-shadow: inset 0 1px 1px rgba(59,38,22,.18);
+    background-image: linear-gradient(90deg, #3B2616 var(--v, 50%), rgba(255,255,255,.45) var(--v, 50%));
   }
   .vol-player input::-webkit-slider-thumb { background: #fff; }
   .vol-player input::-moz-range-thumb { background: #fff; }
@@ -799,7 +807,7 @@
   <button class="skip" id="skip">Saltar intro</button>
   <div class="vol vol-intro">
     <button class="vol-btn" type="button" aria-label="Silenciar"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
-    <input type="range" min="0" max="100" value="20" aria-label="Volumen de la música">
+    <input type="range" min="0" max="100" value="10" aria-label="Volumen de la música">
   </div>
 </div>
 
@@ -869,7 +877,7 @@
         </div>
         <div class="vol vol-player">
           <button class="vol-btn" type="button" aria-label="Silenciar"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
-          <input type="range" min="0" max="100" value="20" aria-label="Volumen de la música">
+          <input type="range" min="0" max="100" value="10" aria-label="Volumen de la música">
         </div>
         <p class="note" id="note" hidden>No se pudo cargar esta canción aquí, pero puedes <a id="ytLink" href="#" target="_blank" rel="noopener">escucharla en YouTube</a>.</p>
         <ol class="tracks" id="tracks"></ol>
@@ -1955,28 +1963,45 @@
     var PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
 
     /* ---------- volumen ---------- */
-    // empieza al 20 %; `fade` solo se usa para entrar suave al empezar
-    var vol = .2, lastVol = .2, fade = 1;
-    // el iPhone ignora audio.volume: ahí el volumen pasa por Web Audio (un nodo de ganancia)
-    var probe = document.createElement('audio');
-    probe.volume = .5;
-    var needsGain = probe.volume !== .5 && !!(window.AudioContext || window.webkitAudioContext);
+    // empieza al 10 %; `fade` solo se usa para entrar suave al empezar
+    var vol = .1, lastVol = .1, fade = 1;
+    // El volumen va siempre por Web Audio (un nodo de ganancia): en los celulares, sobre todo
+    // en el iPhone, audio.volume no hace nada. Así funciona igual en celular y en PC.
+    var AC = window.AudioContext || window.webkitAudioContext;
     var actx = null, gain = null;
     function applyVol() {
       var v = Math.max(0, Math.min(1, vol * fade));
-      if (gain) gain.gain.value = v; else audio.volume = v;
-    }
-    function ensureGain() {
-      if (!needsGain || gain) return;
-      try {
-        actx = new (window.AudioContext || window.webkitAudioContext)();
-        gain = actx.createGain();
-        actx.createMediaElementSource(audio).connect(gain);
-        gain.connect(actx.destination);
+      if (gain) {
+        gain.gain.value = v;
         audio.volume = 1;
+      } else {
+        audio.volume = v;
+      }
+    }
+    // solo se llama dentro de un toque o tecla: el navegador exige un gesto para activar el audio
+    function ensureGain() {
+      if (!AC || gain) return;
+      try {
+        // iPhone: que la música suene aunque el celular esté en modo silencio
+        if (navigator.audioSession) navigator.audioSession.type = 'playback';
+      } catch (e) {}
+      try {
+        actx = new AC();
+        var g = actx.createGain();
+        actx.createMediaElementSource(audio).connect(g);
+        g.connect(actx.destination);
+        gain = g;
       } catch (e) { gain = null; }
       applyVol();
     }
+    function resumeAudio() {
+      if (actx && actx.state !== 'running') {
+        var p = actx.resume();
+        if (p && p.catch) p.catch(function () {});
+      }
+    }
+    // al volver a la pestaña (o tras una llamada en el celular) el audio puede quedar en pausa
+    document.addEventListener('visibilitychange', function () { if (!document.hidden) resumeAudio(); });
     var ICON = {
       mute: '<path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>',
       low: '<path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16.5 12a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/>',
@@ -2093,11 +2118,11 @@
        hasta que la persona toca algo, así que también arranca con el primer toque o tecla
        (normalmente el botón del regalo) y sigue sonando durante la intro y en la playlist. */
     var starting = false;
-    // atLoad: intento sin gesto al abrir; el nodo de volumen del iPhone solo se crea con un gesto real
+    // atLoad: intento sin gesto al abrir; el nodo de volumen solo se crea con un gesto real
     function start(atLoad) {
       if (atLoad !== true) {
         ensureGain();
-        if (actx && actx.state === 'suspended') actx.resume();
+        resumeAudio();
       }
       if (started || starting) return;
       starting = true;
@@ -2106,18 +2131,19 @@
       function ok() {
         started = true; starting = false;
         fadeTo(1, 1800);
-        GESTURES.forEach(function (ev) { document.removeEventListener(ev, onGesture, true); });
       }
       if (pr && pr.then) pr.then(ok, function () { starting = false; fade = 1; applyVol(); setPlaying(false); });
       else ok();
     }
+    // cada toque o tecla: arranca la música la primera vez y mantiene el audio activo después
     function onGesture() { start(); }
-    var GESTURES = ['pointerup', 'touchend', 'keydown', 'click'];
-    GESTURES.forEach(function (ev) { document.addEventListener(ev, onGesture, true); });
+    ['pointerup', 'touchend', 'keydown', 'click'].forEach(function (ev) {
+      document.addEventListener(ev, onGesture, true);
+    });
 
     load(0, false);
     setVol(vol);
-    if (!needsGain) start(true);   // intento de reproducción inmediata al abrir la página
+    start(true);   // intento de reproducción inmediata al abrir la página
     return { startIntro: onGesture, onReveal: onGesture };
   })();
   window.__player = Player;
