@@ -799,7 +799,7 @@
   <button class="skip" id="skip">Saltar intro</button>
   <div class="vol vol-intro">
     <button class="vol-btn" type="button" aria-label="Silenciar"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
-    <input type="range" min="0" max="100" value="50" aria-label="Volumen de la música">
+    <input type="range" min="0" max="100" value="20" aria-label="Volumen de la música">
   </div>
 </div>
 
@@ -869,7 +869,7 @@
         </div>
         <div class="vol vol-player">
           <button class="vol-btn" type="button" aria-label="Silenciar"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
-          <input type="range" min="0" max="100" value="50" aria-label="Volumen de la música">
+          <input type="range" min="0" max="100" value="20" aria-label="Volumen de la música">
         </div>
         <p class="note" id="note" hidden>No se pudo cargar esta canción aquí, pero puedes <a id="ytLink" href="#" target="_blank" rel="noopener">escucharla en YouTube</a>.</p>
         <ol class="tracks" id="tracks"></ol>
@@ -1955,8 +1955,8 @@
     var PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
 
     /* ---------- volumen ---------- */
-    // empieza a la mitad; `fade` solo se usa para entrar suave al empezar
-    var vol = .5, lastVol = .5, fade = 1;
+    // empieza al 20 %; `fade` solo se usa para entrar suave al empezar
+    var vol = .2, lastVol = .2, fade = 1;
     // el iPhone ignora audio.volume: ahí el volumen pasa por Web Audio (un nodo de ganancia)
     var probe = document.createElement('audio');
     probe.volume = .5;
