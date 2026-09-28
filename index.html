@@ -193,6 +193,49 @@
     transition: opacity .6s ease, color .2s ease;
   }
   #intro.cinema .skip { opacity: 1; pointer-events: auto; }
+
+  /* ================= VOLUMEN (intro y playlist) ================= */
+  .vol { display: flex; align-items: center; gap: .4rem; }
+  .vol-btn {
+    flex: none; width: 32px; height: 32px; padding: 0;
+    border: none; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    background: transparent; color: inherit; cursor: pointer;
+    transition: background .2s ease, transform .35s cubic-bezier(.3,1.7,.5,1);
+  }
+  .vol-btn svg { width: 20px; height: 20px; fill: currentColor; }
+  .vol-btn:active { transform: scale(.86); }
+  .vol-btn:focus-visible, .vol input:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+  .vol input {
+    -webkit-appearance: none; appearance: none;
+    flex: 1; min-width: 0; height: 4px; margin: 0; border-radius: 3px; cursor: pointer;
+  }
+  .vol input::-webkit-slider-thumb { -webkit-appearance: none; width: 13px; height: 13px; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  .vol input::-moz-range-thumb { width: 13px; height: 13px; border: none; border-radius: 50%; box-shadow: 0 1px 4px rgba(0,0,0,.35); }
+  /* en la intro: abajo a la izquierda, del mismo tono discreto que "Saltar intro" */
+  .vol-intro {
+    position: absolute; z-index: 4;
+    left: 1rem; bottom: calc(9vh + .75rem);
+    width: 148px;
+    padding: .25rem .8rem .25rem .3rem;
+    border-radius: 999px;
+    color: rgba(247,228,190,.6);
+    background: rgba(255,220,160,.04);
+    box-shadow: inset 0 0 0 1px rgba(214,172,102,.22);
+    transition: color .25s ease, background .25s ease;
+  }
+  .vol-intro:hover, .vol-intro:focus-within { color: #F7E4BE; background: rgba(255,220,160,.08); }
+  .vol-intro input { background: linear-gradient(90deg, rgba(247,228,190,.85) var(--v, 50%), rgba(247,228,190,.18) var(--v, 50%)); }
+  .vol-intro input::-webkit-slider-thumb { background: #F7E4BE; }
+  .vol-intro input::-moz-range-thumb { background: #F7E4BE; }
+  /* en la playlist: una fila fina bajo los controles */
+  .vol-player { position: relative; margin: .1rem .35rem .55rem; color: #3B2616; opacity: .82; }
+  .vol-player input {
+    background: linear-gradient(90deg, #3B2616 var(--v, 50%), rgba(255,255,255,.38) var(--v, 50%));
+    box-shadow: inset 0 1px 1px rgba(59,38,22,.18);
+  }
+  .vol-player input::-webkit-slider-thumb { background: #fff; }
+  .vol-player input::-moz-range-thumb { background: #fff; }
   .skip:hover { color: #F7E4BE; }
   .skip:focus-visible { outline: 1px solid #F3CF84; }
 
@@ -754,6 +797,10 @@
   </div>
   <div id="cine" aria-live="polite"></div>
   <button class="skip" id="skip">Saltar intro</button>
+  <div class="vol vol-intro">
+    <button class="vol-btn" type="button" aria-label="Silenciar"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
+    <input type="range" min="0" max="100" value="50" aria-label="Volumen de la música">
+  </div>
 </div>
 
 <div id="decor" aria-hidden="true">
@@ -819,6 +866,10 @@
           <button class="ctrl" id="prev" aria-label="Anterior"><svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14L9 12z"/></svg></button>
           <button class="ctrl main" id="play" aria-label="Reproducir"><svg viewBox="0 0 24 24" id="playIcon"><path d="M8 5v14l11-7z"/></svg></button>
           <button class="ctrl" id="next" aria-label="Siguiente"><svg viewBox="0 0 24 24"><path d="M16 5h2v14h-2zM4 5v14l11-7z"/></svg></button>
+        </div>
+        <div class="vol vol-player">
+          <button class="vol-btn" type="button" aria-label="Silenciar"><svg viewBox="0 0 24 24" aria-hidden="true"></svg></button>
+          <input type="range" min="0" max="100" value="50" aria-label="Volumen de la música">
         </div>
         <p class="note" id="note" hidden>No se pudo cargar esta canción aquí, pero puedes <a id="ytLink" href="#" target="_blank" rel="noopener">escucharla en YouTube</a>.</p>
         <ol class="tracks" id="tracks"></ol>
@@ -1881,10 +1932,11 @@
      ========================================================= */
   var Player = (function () {
     var list = [
-      { t: 'Química Mayor', a: 'Mon Laferte', c: '#B0553A', yt: 'e23BTGIJcq8' },
-      { t: 'Soñé (En Vivo)', a: 'Zoé', c: '#5F8C86', yt: 'HJqlA_HTEU8' },
-      { t: 'Fade Into You', a: 'Mazzy Star', c: '#7B5A8E', yt: 'ImKY6TZEyrI' },
-      { t: 'Cinnamon Girl', a: 'Lana Del Rey', c: '#3D6EA6', yt: '_IasKxlfKeU' }
+      { t: 'Flores Amarillas', a: 'Floricienta', c: '#D39A12', yt: 'PykXcyfPUk4', f: 'musica/flores-amarillas.mp3' },
+      { t: 'Química Mayor', a: 'Mon Laferte', c: '#B0553A', yt: 'e23BTGIJcq8', f: 'musica/1.mp3' },
+      { t: 'Soñé (En Vivo)', a: 'Zoé', c: '#5F8C86', yt: 'HJqlA_HTEU8', f: 'musica/2.mp3' },
+      { t: 'Fade Into You', a: 'Mazzy Star', c: '#7B5A8E', yt: 'ImKY6TZEyrI', f: 'musica/3.mp3' },
+      { t: 'Cinnamon Girl', a: 'Lana Del Rey', c: '#3D6EA6', yt: '_IasKxlfKeU', f: 'musica/4.mp3' }
     ];
     function thumb(id) { return 'https://i.ytimg.com/vi/' + id + '/hqdefault.jpg'; }
     var audio = new Audio();
@@ -1899,8 +1951,55 @@
     var playBtn = document.getElementById('play'), playIcon = document.getElementById('playIcon');
     var note = document.getElementById('note'), ytLink = document.getElementById('ytLink');
     var tracksEl = document.getElementById('tracks');
-    var idx = 0, seeking = false, introMode = false, fadeId = null;
+    var idx = 0, seeking = false, fadeId = null, started = false;
     var PLAY = '<path d="M8 5v14l11-7z"/>', PAUSE = '<path d="M6 5h4v14H6zM14 5h4v14h-4z"/>';
+
+    /* ---------- volumen ---------- */
+    // empieza a la mitad; `fade` solo se usa para entrar suave al empezar
+    var vol = .5, lastVol = .5, fade = 1;
+    // el iPhone ignora audio.volume: ahí el volumen pasa por Web Audio (un nodo de ganancia)
+    var probe = document.createElement('audio');
+    probe.volume = .5;
+    var needsGain = probe.volume !== .5 && !!(window.AudioContext || window.webkitAudioContext);
+    var actx = null, gain = null;
+    function applyVol() {
+      var v = Math.max(0, Math.min(1, vol * fade));
+      if (gain) gain.gain.value = v; else audio.volume = v;
+    }
+    function ensureGain() {
+      if (!needsGain || gain) return;
+      try {
+        actx = new (window.AudioContext || window.webkitAudioContext)();
+        gain = actx.createGain();
+        actx.createMediaElementSource(audio).connect(gain);
+        gain.connect(actx.destination);
+        audio.volume = 1;
+      } catch (e) { gain = null; }
+      applyVol();
+    }
+    var ICON = {
+      mute: '<path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" fill="none"/>',
+      low: '<path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16.5 12a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/>',
+      high: '<path d="M3 9v6h4l5 4V5L7 9H3z"/><path d="M16.5 12a4.5 4.5 0 0 0-2.5-4v8a4.5 4.5 0 0 0 2.5-4z"/><path d="M14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z"/>'
+    };
+    var volUIs = Array.prototype.slice.call(document.querySelectorAll('.vol'));
+    function setVol(v, from) {
+      vol = Math.max(0, Math.min(1, v));
+      if (vol > 0) lastVol = vol;
+      applyVol();
+      volUIs.forEach(function (ui) {
+        var r = ui.querySelector('input'), b = ui.querySelector('button');
+        if (r !== from) r.value = Math.round(vol * 100);
+        r.style.setProperty('--v', (vol * 100) + '%');
+        b.querySelector('svg').innerHTML = vol === 0 ? ICON.mute : vol < .5 ? ICON.low : ICON.high;
+        b.setAttribute('aria-label', vol === 0 ? 'Activar el sonido' : 'Silenciar');
+      });
+    }
+    volUIs.forEach(function (ui) {
+      var r = ui.querySelector('input');
+      r.addEventListener('input', function () { start(); setVol(r.value / 100, r); });
+      ui.querySelector('button').addEventListener('click', function () { start(); setVol(vol > 0 ? 0 : lastVol); });
+    });
 
     function addImg(parent, id) {
       var im = new Image();
@@ -1931,9 +2030,11 @@
     }
     function fadeTo(target, ms) {
       clearInterval(fadeId);
-      var start = audio.volume, steps = Math.max(1, Math.round(ms / 60)), n = 0;
+      var from = fade, steps = Math.max(1, Math.round(ms / 60)), n = 0;
       fadeId = setInterval(function () {
-        n++; audio.volume = Math.max(0, Math.min(1, start + (target - start) * n / steps));
+        n++;
+        fade = from + (target - from) * n / steps;
+        applyVol();
         if (n >= steps) clearInterval(fadeId);
       }, 60);
     }
@@ -1942,8 +2043,8 @@
       var tr = list[idx];
       note.hidden = true;
       clearInterval(fadeId);
-      introMode = false; audio.muted = false; audio.volume = 1;
-      audio.src = 'musica/' + (idx + 1) + '.mp3';
+      fade = 1; applyVol();
+      audio.src = tr.f;
       tTitle.textContent = tr.t; tArtist.textContent = tr.a; labelTitle.textContent = tr.t;
       player.style.setProperty('--c', tr.c); shell.style.setProperty('--c', tr.c);
       var old = label.querySelector('img'); if (old) old.remove();
@@ -1958,12 +2059,12 @@
       if (pr && pr.catch) pr.catch(function () { setPlaying(false); });
     }
     audio.addEventListener('error', function () { setPlaying(false); note.hidden = false; });
-    audio.addEventListener('play', function () { if (!introMode) setPlaying(true); });
+    audio.addEventListener('play', function () { setPlaying(true); });
     audio.addEventListener('pause', function () { setPlaying(false); });
     audio.addEventListener('ended', function () { load(idx + 1, true); });
     audio.addEventListener('loadedmetadata', function () { tDur.textContent = fmt(audio.duration); });
     audio.addEventListener('timeupdate', function () {
-      if (seeking || !audio.duration || introMode) return;
+      if (seeking || !audio.duration) return;
       var p = audio.currentTime / audio.duration;
       seek.value = p * 1000; seek.style.setProperty('--p', (p * 100) + '%');
       tCur.textContent = fmt(audio.currentTime);
@@ -1978,7 +2079,7 @@
       seeking = false;
     });
     playBtn.addEventListener('click', function () {
-      if (introMode) { onReveal(); return; }
+      if (!started) { start(); return; }
       if (audio.paused) play(); else audio.pause();
     });
     document.getElementById('prev').addEventListener('click', function () {
@@ -1987,23 +2088,37 @@
     });
     document.getElementById('next').addEventListener('click', function () { load(idx + 1, !audio.paused); });
 
-    // Se "desbloquea" en silencio al tocar el regalo y suena al aparecer las flores
-    function startIntro() {
-      introMode = true;
-      audio.muted = true;
-      play();
-    }
-    function onReveal() {
-      introMode = false;
-      audio.currentTime = 0;
-      audio.volume = 0;
-      audio.muted = false;
+    /* ---------- que "Flores Amarillas" suene desde el principio ----------
+       Se intenta apenas se abre la página. Casi todos los navegadores bloquean el audio
+       hasta que la persona toca algo, así que también arranca con el primer toque o tecla
+       (normalmente el botón del regalo) y sigue sonando durante la intro y en la playlist. */
+    var starting = false;
+    // atLoad: intento sin gesto al abrir; el nodo de volumen del iPhone solo se crea con un gesto real
+    function start(atLoad) {
+      if (atLoad !== true) {
+        ensureGain();
+        if (actx && actx.state === 'suspended') actx.resume();
+      }
+      if (started || starting) return;
+      starting = true;
+      fade = 0; applyVol();
       var pr = audio.play();
-      if (pr && pr.then) pr.then(function () { setPlaying(true); fadeTo(1, 2500); }).catch(function () { audio.volume = 1; setPlaying(false); });
+      function ok() {
+        started = true; starting = false;
+        fadeTo(1, 1800);
+        GESTURES.forEach(function (ev) { document.removeEventListener(ev, onGesture, true); });
+      }
+      if (pr && pr.then) pr.then(ok, function () { starting = false; fade = 1; applyVol(); setPlaying(false); });
+      else ok();
     }
+    function onGesture() { start(); }
+    var GESTURES = ['pointerup', 'touchend', 'keydown', 'click'];
+    GESTURES.forEach(function (ev) { document.addEventListener(ev, onGesture, true); });
 
     load(0, false);
-    return { startIntro: startIntro, onReveal: onReveal };
+    setVol(vol);
+    if (!needsGain) start(true);   // intento de reproducción inmediata al abrir la página
+    return { startIntro: onGesture, onReveal: onGesture };
   })();
   window.__player = Player;
 
